@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int      @id @default(autoincrement()) 
+  email    String   @unique
+  name     String   @unique 
+  password String
+  status   Status   @default(Active)
+
+  roleId   Int?      // Each user has one role
+  role     Role?     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  refreshTokens RefreshToken[]
+
+
+
+  Todo Todo[]
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  roleName    String   @unique  
+  description String
+  boxColor String @default("#000000")
+  roleColor String  @default("#000000")
+
+  users       User[] 
+
+  RolePermission RolePermission[]
+
+  Todo Todo[]
+}
+
+
+enum Status {
+  Active
+  Inactive
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String 
+  userId    Int
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt]) // Optimize queries filtering by expiresAt
+}
+
+enum Action {
+  CREATE_USER
+  GETALL_USER
+  GET_USER
+  UPDATE_USERSTATUS
+  UPDATE_USERSDATA
+  DELETE_USER
+  ADD_ROLES
+  DELETE_ROLES
+  GET_ALLROLES //new
+  GET_ALLPERMISSIONS
+  GET_PERMISSIONS
+  UPDATE_PERMISSIONS
+  GET_ROLES
+  UPDATE_ROLESCOLOR
+}
+ 
+model RolePermission {
+  id      Int    @id @default(autoincrement())
+  role    Role   @relation(fields: [roleId], references: [id])
+  roleId  Int
+  action  Action
+}
+
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  task     String   @unique
+  checklist Boolean  @default(false) // Boolean for checklist
+  roleId    Int?     // Optional association with a role
+  role      Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)  
+ 
+}
+
+
